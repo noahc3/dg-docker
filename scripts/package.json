@@ -1,0 +1,9 @@
+{
+  "name": "dg-docker",
+  "version": "1.0.0",
+  "description": "Manager for Digital Garden Docker",
+  "main": "manager.js",
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}

@@ -1,0 +1,5 @@
+# Dependencies
+scripts/node_modules/
+
+# Environment — contains secrets (PAT, webhook secret)
+.env

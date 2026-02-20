@@ -1,0 +1,16 @@
+services:
+  dg-docker:
+    build: .
+    container_name: dg-docker
+    ports:
+      - "80:80"
+    env_file:
+      - .env
+    restart: unless-stopped
+    volumes:
+      - repo-data:/app/repo
+      - web-content:/var/www/html
+
+volumes:
+  repo-data:
+  web-content:
