@@ -1,6 +1,6 @@
 # Digital Garden Self-Hosting Docker
 
-This Docker setup automates the process of self-hosting your Obsidian Digital Garden. It handles cloning your repository, building the static site using Eleventy, and serving it via Nginx. It also includes a webhook listener for automatic updates whenever you push changes to your GitHub repository.
+A self-hosting alternative to Vercel/Netlify for notes published with the [Obsidian Digital Garden plugin](https://dg-docs.ole.dev/). The plugin lets you publish notes from Obsidian to a GitHub repository as a static site; this container clones that repository, builds it with Eleventy, and serves it with Nginx — automatically rebuilding whenever you push new notes.
 
 ## Features
 
