@@ -14,10 +14,6 @@ const workDir = '/app/repo';
 const buildDir = path.join(workDir, 'dist');
 const serveDir = '/var/www/html';
 
-// Use raw body for webhook so the HMAC is computed over the original bytes,
-// matching what GitHub actually signed. bodyParser.json() + JSON.stringify()
-// can silently alter key order / whitespace and will break verification.
-app.use('/webhook', express.raw({ type: 'application/json' }));
 
 function log(msg) {
     console.log(`[MANAGER] ${new Date().toISOString()} - ${msg}`);
@@ -27,11 +23,14 @@ function verifySignature(req) {
     if (!secret) return true; // No secret configured; warn but allow through
     const signature = req.headers['x-hub-signature-256'];
     if (!signature) return false;
-    const hmac = crypto.createHmac('sha256', secret);
-    const digest = 'sha256=' + hmac.update(req.body).digest('hex');
+    if (!Buffer.isBuffer(req.body)) {
+        log('WARNING: req.body is not a Buffer — raw body middleware did not run correctly.');
+        return false;
+    }
     try {
-        // timingSafeEqual requires same-length buffers; catch the TypeError if
-        // the incoming signature is malformed / a different length.
+        const hmac = crypto.createHmac('sha256', secret);
+        const digest = 'sha256=' + hmac.update(req.body).digest('hex');
+        // timingSafeEqual requires same-length buffers; throws TypeError if lengths differ.
         return crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(digest));
     } catch {
         return false;
@@ -183,7 +182,12 @@ function runBuild() {
     ensureIndexPage();
 }
 
-app.post('/webhook', (req, res) => {
+// express.raw() is applied inline here rather than via app.use() to ensure it
+// runs in the same routing context as the handler. When mounted with app.use()
+// Express strips the path prefix before calling the middleware, which can cause
+// body-parser to skip parsing and leave req.body as a plain object instead of
+// the Buffer needed for HMAC verification.
+app.post('/webhook', express.raw({ type: '*/*' }), (req, res) => {
     log('Received webhook request.');
     if (!verifySignature(req)) {
         log('Invalid signature. Ignoring.');
