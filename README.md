@@ -14,9 +14,10 @@ A self-hosting alternative to Vercel/Netlify for notes published with the [Obsid
 
 ### 1. Prerequisites
 
-- Docker and Docker Compose installed.
-- A GitHub Personal Access Token (PAT) with `repo` scope.
-- A GitHub repository containing your Digital Garden source (usually created by the Obsidian Digital Garden plugin).
+- A GitHub repository containing your Digital Garden source with the plugin setup in Obsidian (see the [Digital Garden plugin docs](https://dg-docs.ole.dev/)).
+- A GitHub Personal Access Token (PAT) with `repo` scope (you can use the same one you supply to the Digital Garden plugin)
+- Docker and Docker Compose installed on a server that supports containerization.
+- This repo cloned onto the server you plan to use.
 
 ### 2. Configuration
 
@@ -28,6 +29,8 @@ GITHUB_REPO=your-garden-repo-name
 GITHUB_PAT=your-github-personal-access-token
 WEBHOOK_SECRET=a-secure-random-secret
 ```
+
+You should generate a long random password to use as the secret using eg. [this tool](https://nordpass.com/password-generator/) (or any other password generator). I recommend using at least 64 characters.
 
 ### 3. Launch
 
@@ -69,4 +72,4 @@ The container runs a small Node.js manager script that:
 
 ## Security Note
 
-Your `GITHUB_PAT` is used to clone the repository. Ensure your `.env` file is kept secure and not committed to any public repositories.
+**Very important:** Your `GITHUB_PAT` is used to clone the repository. If you are reusing your token that you use for the Digital Garden plugin, it will have **read and write access** to your content. Ensure your `.env` file is kept secure and not committed to any public repositories.
