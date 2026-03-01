@@ -10,7 +10,7 @@ services:
     volumes:
       - ./nginx/dg-docker.conf.template:/etc/nginx/templates/dg-docker.conf.template:ro
       - repo-data:/app/repo
-      - web-content:/var/www/html
+      - web-content:${SERVE_DIR}
 
 volumes:
   repo-data:

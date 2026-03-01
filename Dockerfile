@@ -21,11 +21,12 @@ ENV GITHUB_USERNAME=""
 ENV GITHUB_REPO=""
 ENV WEBHOOK_SECRET=""
 
-# Setup web root
-RUN mkdir -p ${SERVE_DIR} && chown -R node:node ${SERVE_DIR}
+COPY scripts/entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
   CMD wget -qO- http://localhost:3000/health || exit 1
 
-ENTRYPOINT ["node", "scripts/manager.js"]
+ENTRYPOINT ["/entrypoint.sh"]
+CMD ["node", "scripts/manager.js"]
