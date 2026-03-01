@@ -10,7 +10,7 @@ const secret = process.env.WEBHOOK_SECRET;
 const pat = process.env.GITHUB_PAT;
 const username = process.env.GITHUB_USERNAME;
 const repoName = process.env.GITHUB_REPO;
-const startNginx = process.env.START_NGINX !== 'false';
+const startInternalNginx = process.env.START_INTERNAL_NGINX !== 'false';
 const workDir = '/app/repo';
 const buildDir = path.join(workDir, 'dist');
 const serveDir = process.env.SERVE_DIR || '/var/www/html';
@@ -215,19 +215,8 @@ app.get('/health', (req, res) => {
     res.status(200).send('OK');
 });
 
-function startNginx() {
-    log('Starting Nginx...');
-    const nginxConfigTemplate = '/etc/nginx/template/nginx.conf.template';
-
-    try {
-        const template = fs.readFileSync(nginxConfigTemplate, 'utf8');
-        const config = template.replace(/\$\{SERVE_DIR\}/g, serveDir);
-        fs.writeFileSync(nginxConfigPath, config);
-        log(`Nginx config written with SERVE_DIR=${serveDir}`);
-    } catch (err) {
-        log(`Warning: Could not generate nginx config from template: ${err.message}`);
-        log('Using existing nginx.conf');
-    }
+function startInternalNginx() {
+    log('Starting internal Nginx...');
 
     const nginx = spawn('nginx', ['-g', 'daemon off;'], { stdio: 'inherit' });
     nginx.on('error', (err) => {
@@ -249,7 +238,7 @@ function startNginx() {
     log(`Webhook Secret: ${secret ? '[SET]' : '[NOT SET]'}`);
     log(`GitHub PAT: ${pat ? '[SET]' : '[NOT SET]'}`);
     log(`Serve Directory: ${serveDir}`);
-    log(`Start Nginx: ${startNginx ? '[YES]' : '[NO]'}`);
+    log(`Start internal Nginx: ${startInternalNginx ? '[YES]' : '[NO]'}`);
 
     if (!username || !repoName || !pat) {
         log('ERROR: GITHUB_USERNAME, GITHUB_REPO, and GITHUB_PAT must be provided.');
@@ -257,7 +246,7 @@ function startNginx() {
     }
 
     // Ensure the serve directory exists and has correct permissions
-    if (startNginx) {
+    if (startInternalNginx) {
         fs.mkdirSync(serveDir, { recursive: true });
         try {
             execSync(`chown -R node:node ${serveDir}`);
@@ -269,9 +258,9 @@ function startNginx() {
     // Initial clone/pull + build
     runBuild();
 
-    // Start Nginx to serve the built files (if enabled)
-    if (startNginx) {
-        startNginx();
+    // Start internal Nginx to serve the built files (if enabled)
+    if (startInternalNginx) {
+        startInternalNginx();
     } else {
         log('Nginx start disabled. Use external Nginx to serve ' + serveDir);
     }

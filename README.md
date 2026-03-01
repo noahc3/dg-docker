@@ -44,7 +44,7 @@ You should generate a long random password for `WEBHOOK_SECRET` using eg. [this 
 |----------|---------|-------------|
 | `MANAGER_PORT` | `3000` | Port for the webhook listener |
 | `SERVE_DIR` | `/var/www/html` | Directory where static files are served from |
-| `START_NGINX` | `false` | Set to `true` to enable internal nginx (default is to use external Nginx server) |
+| `START_INTERNAL_NGINX` | `false` | Set to `true` to enable internal nginx (default is to use external Nginx server) |
 
 ### 3. Launch
 

@@ -1,7 +1,7 @@
 FROM node:22-alpine
 
-# Install git and wget
-RUN apk add --no-cache git wget
+# Install Nginx, git and wget
+RUN apk add --no-cache nginx git wget
 
 # Create app directory
 WORKDIR /app
@@ -15,7 +15,7 @@ COPY scripts/manager.js ./scripts/
 # Environment variables with defaults
 ENV MANAGER_PORT=3000
 ENV SERVE_DIR=/var/www/html
-ENV START_NGINX=false
+ENV START_INTERNAL_NGINX=false
 ENV GITHUB_PAT=""
 ENV GITHUB_USERNAME=""
 ENV GITHUB_REPO=""
