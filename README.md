@@ -44,12 +44,28 @@ You should generate a long random password for `WEBHOOK_SECRET` using eg. [this 
 |----------|---------|-------------|
 | `MANAGER_PORT` | `3000` | Port for the webhook listener |
 | `SERVE_DIR` | `/var/www/html` | Directory where static files are served from |
+| `DOMAIN` | (none) | Domain for nginx config template (when using host nginx) |
 
 ### 3. Choose Your Setup
 
 This project provides two Docker Compose configurations:
 
 - **Without Nginx** (`docker-compose.yml`): The container only runs the webhook listener on port 3000. Use this if you have your own Nginx/reverse proxy that will serve the static files. You may use `nginx/nginx-with-ssl.conf.template` as a template for your nginx configuration.
+
+  To generate the nginx config from the template:
+
+  ```bash
+  source .env
+  export DOMAIN SERVE_DIR
+  envsubst < nginx/nginx-with-ssl.conf.template > /etc/nginx/sites-available/digitalgarden
+  ```
+
+  Then enable and test the config:
+
+  ```bash
+  ln -sf /etc/nginx/sites-available/digitalgarden /etc/nginx/sites-enabled/
+  nginx -t && nginx -s reload
+  ```
 
 - **With Nginx** (`docker-compose.nginx.yml`): Runs both the manager and a separate Nginx container. Nginx proxies `/webhook` and `/health` to the manager, and serves static content. Use this for a quick setup with SSL/TLS support.
 

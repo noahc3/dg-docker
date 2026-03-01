@@ -11,13 +11,13 @@ http {
     keepalive_timeout 65;
 
     server {
-        if ($host = $DOMAIN) {
+        if ($host = ${DOMAIN}) {
             return 301 https://$host$request_uri;
         }
 
         listen 80;
         listen [::]:80;
-        server_name $DOMAIN;
+        server_name ${DOMAIN};
         location /.well-known/acme-challenge/ {
             root /var/www/certbot/;
         }
@@ -26,11 +26,11 @@ http {
     server {
         listen [::]:443 ssl;
         listen 443 ssl;
-        server_name $DOMAIN;
+        server_name ${DOMAIN};
         http2 on;
 
-        ssl_certificate /etc/letsencrypt/live/$DOMAIN/fullchain.pem;
-        ssl_certificate_key /etc/letsencrypt/live/$DOMAIN/privkey.pem;
+        ssl_certificate /etc/letsencrypt/live/${DOMAIN}/fullchain.pem;
+        ssl_certificate_key /etc/letsencrypt/live/${DOMAIN}/privkey.pem;
         include /etc/letsencrypt/options-ssl-nginx.conf;
         ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
 
