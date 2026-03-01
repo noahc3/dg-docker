@@ -22,6 +22,8 @@ server {
     include /etc/letsencrypt/options-ssl-nginx.conf;
     ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
 
+    charset UTF-8;
+
     root ${SERVE_DIR};
     index index.html;
 
