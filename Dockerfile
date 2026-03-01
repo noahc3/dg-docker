@@ -23,9 +23,5 @@ ENV WEBHOOK_SECRET=""
 COPY scripts/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-  CMD wget -qO- http://localhost:3000/health || exit 1
-
 ENTRYPOINT ["/entrypoint.sh"]
 CMD ["node", "scripts/manager.js"]
