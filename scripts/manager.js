@@ -197,9 +197,17 @@ app.post('/webhook', express.raw({ type: '*/*' }), (req, res) => {
     const event = req.headers['x-github-event'];
 
     if (event === 'push') {
-        log('Push event detected. Triggering rebuild.');
-        res.status(202).send('Rebuild triggered');
-        runBuild();
+        const payload = JSON.parse(req.body.toString());
+        const ref = payload.ref;
+
+        if (ref === 'refs/heads/main') {
+            log('Push to main branch detected. Triggering rebuild.');
+            res.status(202).send('Rebuild triggered');
+            runBuild();
+        } else {
+            log(`Push to non-main branch (${ref}). Ignoring.`);
+            res.status(200).send('Ignored - not main branch');
+        }
     } else if (event === 'ping') {
         log('Ping event received. Webhook is active.');
         res.status(200).send('pong');
