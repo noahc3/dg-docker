@@ -9,13 +9,27 @@ services:
     restart: unless-stopped
     volumes:
       - repo-data:/app/repo
-      - web-content:${SERVE_DIR}
+      - web-content:/var/www/html
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:3000/health"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 60s
+
+  nginx:
+    image: nginx:alpine
+    container_name: dg-nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - web-content:/var/www/html
+    env_file:
+      - .env
+    restart: unless-stopped
+    depends_on:
+      - dg-docker
 
 volumes:
   repo-data:

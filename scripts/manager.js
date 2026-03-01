@@ -1,6 +1,6 @@
 const express = require('express');
 const crypto = require('crypto');
-const { execSync, spawn } = require('child_process');
+const { execSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
@@ -12,7 +12,7 @@ const username = process.env.GITHUB_USERNAME;
 const repoName = process.env.GITHUB_REPO;
 const workDir = '/app/repo';
 const buildDir = path.join(workDir, 'dist');
-const serveDir = '/var/www/html';
+const serveDir = process.env.SERVE_DIR || '/var/www/html';
 
 
 function log(msg) {
@@ -197,9 +197,17 @@ app.post('/webhook', express.raw({ type: '*/*' }), (req, res) => {
     const event = req.headers['x-github-event'];
 
     if (event === 'push') {
-        log('Push event detected. Triggering rebuild.');
-        res.status(202).send('Rebuild triggered');
-        runBuild();
+        const payload = JSON.parse(req.body.toString());
+        const ref = payload.ref;
+
+        if (ref === 'refs/heads/main') {
+            log('Push to main branch detected. Triggering rebuild.');
+            res.status(202).send('Rebuild triggered');
+            runBuild();
+        } else {
+            log(`Push to non-main branch (${ref}). Ignoring.`);
+            res.status(200).send('Ignored - not main branch');
+        }
     } else if (event === 'ping') {
         log('Ping event received. Webhook is active.');
         res.status(200).send('pong');
@@ -214,20 +222,6 @@ app.get('/health', (req, res) => {
     res.status(200).send('OK');
 });
 
-function startNginx() {
-    log('Starting Nginx...');
-    const nginx = spawn('nginx', ['-g', 'daemon off;'], { stdio: 'inherit' });
-    nginx.on('error', (err) => {
-        log(`Failed to start Nginx: ${err.message}`);
-        process.exit(1);
-    });
-    nginx.on('close', (code) => {
-        log(`Nginx exited with code ${code}`);
-        process.exit(code);
-    });
-    return nginx;
-}
-
 // Main execution
 (async () => {
     log('Manager starting...');
@@ -235,6 +229,7 @@ function startNginx() {
     log(`Configured Repo: ${repoName}`);
     log(`Webhook Secret: ${secret ? '[SET]' : '[NOT SET]'}`);
     log(`GitHub PAT: ${pat ? '[SET]' : '[NOT SET]'}`);
+    log(`Serve Directory: ${serveDir}`);
 
     if (!username || !repoName || !pat) {
         log('ERROR: GITHUB_USERNAME, GITHUB_REPO, and GITHUB_PAT must be provided.');
@@ -243,9 +238,6 @@ function startNginx() {
 
     // Initial clone/pull + build
     runBuild();
-
-    // Start Nginx to serve the built files
-    startNginx();
 
     // Start the webhook listener
     app.listen(port, () => {
