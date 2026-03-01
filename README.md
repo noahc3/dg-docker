@@ -50,20 +50,20 @@ You should generate a long random password for `WEBHOOK_SECRET` using eg. [this 
 
 This project provides two Docker Compose configurations:
 
-- **Without Nginx** (`docker-compose.yml`): The container only runs the webhook listener on port 3000. Use this if you have your own Nginx/reverse proxy that will serve the static files. You may use `nginx/nginx-with-ssl.conf.template` as a template for your nginx configuration.
+- **Without Nginx** (`docker-compose.yml`): The container only runs the webhook listener on port 3000. Use this if you have your own Nginx/reverse proxy that will serve the static files. You may use `nginx/nginx-reverse-proxy.conf.template` as a template for your nginx configuration.
 
   To generate the nginx config from the template:
 
   ```bash
   source .env
   export DOMAIN SERVE_DIR
-  envsubst < nginx/nginx-with-ssl.conf.template > /etc/nginx/sites-available/digitalgarden
+  envsubst '${DOMAIN}${SERVE_DIR}' < nginx/nginx-reverse-proxy.conf.template > /etc/nginx/sites-available/digitalgarden.conf
   ```
 
   Then enable and test the config:
 
   ```bash
-  ln -sf /etc/nginx/sites-available/digitalgarden /etc/nginx/sites-enabled/
+  ln -sf /etc/nginx/sites-available/digitalgarden.conf /etc/nginx/sites-enabled/
   nginx -t && nginx -s reload
   ```
 
