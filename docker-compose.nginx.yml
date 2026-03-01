@@ -1,0 +1,30 @@
+services:
+  dg-docker:
+    build: .
+    container_name: dg-docker
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    restart: unless-stopped
+    volumes:
+      - repo-data:/app/repo
+      - web-content:/var/www/html
+
+  nginx:
+    image: nginx:alpine
+    container_name: dg-nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - web-content:/var/www/html
+    env_file:
+      - .env
+    restart: unless-stopped
+    depends_on:
+      - dg-docker
+
+volumes:
+  repo-data:
+  web-content:

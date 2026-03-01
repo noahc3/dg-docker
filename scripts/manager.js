@@ -1,6 +1,6 @@
 const express = require('express');
 const crypto = require('crypto');
-const { execSync, spawn } = require('child_process');
+const { execSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
@@ -10,7 +10,6 @@ const secret = process.env.WEBHOOK_SECRET;
 const pat = process.env.GITHUB_PAT;
 const username = process.env.GITHUB_USERNAME;
 const repoName = process.env.GITHUB_REPO;
-const startInternalNginx = process.env.START_INTERNAL_NGINX !== 'false';
 const workDir = '/app/repo';
 const buildDir = path.join(workDir, 'dist');
 const serveDir = process.env.SERVE_DIR || '/var/www/html';
@@ -215,21 +214,6 @@ app.get('/health', (req, res) => {
     res.status(200).send('OK');
 });
 
-function startInternalNginx() {
-    log('Starting internal Nginx...');
-
-    const nginx = spawn('nginx', ['-g', 'daemon off;'], { stdio: 'inherit' });
-    nginx.on('error', (err) => {
-        log(`Failed to start Nginx: ${err.message}`);
-        process.exit(1);
-    });
-    nginx.on('close', (code) => {
-        log(`Nginx exited with code ${code}`);
-        process.exit(code);
-    });
-    return nginx;
-}
-
 // Main execution
 (async () => {
     log('Manager starting...');
@@ -238,32 +222,14 @@ function startInternalNginx() {
     log(`Webhook Secret: ${secret ? '[SET]' : '[NOT SET]'}`);
     log(`GitHub PAT: ${pat ? '[SET]' : '[NOT SET]'}`);
     log(`Serve Directory: ${serveDir}`);
-    log(`Start internal Nginx: ${startInternalNginx ? '[YES]' : '[NO]'}`);
 
     if (!username || !repoName || !pat) {
         log('ERROR: GITHUB_USERNAME, GITHUB_REPO, and GITHUB_PAT must be provided.');
         process.exit(1);
     }
 
-    // Ensure the serve directory exists and has correct permissions
-    if (startInternalNginx) {
-        fs.mkdirSync(serveDir, { recursive: true });
-        try {
-            execSync(`chown -R node:node ${serveDir}`);
-        } catch (e) {
-            log(`Warning: Could not change ownership of ${serveDir}: ${e.message}`);
-        }
-    }
-
     // Initial clone/pull + build
     runBuild();
-
-    // Start internal Nginx to serve the built files (if enabled)
-    if (startInternalNginx) {
-        startInternalNginx();
-    } else {
-        log('Nginx start disabled. Use external Nginx to serve ' + serveDir);
-    }
 
     // Start the webhook listener
     app.listen(port, () => {

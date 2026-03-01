@@ -1,0 +1,66 @@
+events {
+    worker_connections 1024;
+}
+
+http {
+    include /etc/nginx/mime.types;
+    default_type application/octet-stream;
+
+    sendfile on;
+    tcp_nopush on;
+    keepalive_timeout 65;
+
+    server {
+        if ($host = $DOMAIN) {
+            return 301 https://$host$request_uri;
+        }
+
+        listen 80;
+        listen [::]:80;
+        server_name $DOMAIN;
+        location /.well-known/acme-challenge/ {
+            root /var/www/certbot/;
+        }
+    }
+
+    server {
+        listen [::]:443 ssl;
+        listen 443 ssl;
+        server_name $DOMAIN;
+        http2 on;
+
+        ssl_certificate /etc/letsencrypt/live/$DOMAIN/fullchain.pem;
+        ssl_certificate_key /etc/letsencrypt/live/$DOMAIN/privkey.pem;
+        include /etc/letsencrypt/options-ssl-nginx.conf;
+        ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
+
+        root ${SERVE_DIR};
+        index index.html;
+
+        # Serve the Digital Garden's own 404 page for missing paths rather
+        # than the bare nginx error page.
+        error_page 404 /404.html;
+
+        location / {
+            # Try exact file, then directory index, then fall through to 404.
+            # Digital Garden is a static site — every note has its own
+            # index.html, so the SPA-style "/index.html" catch-all is wrong
+            # and would silently hide broken links.
+            try_files $uri $uri/ =404;
+        }
+
+        # Proxy webhook requests to the manager script
+        location /webhook {
+            proxy_pass http://localhost:3000/webhook;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+
+        # Health check for Nginx / static content layer
+        location /health-nginx {
+            return 200 'OK';
+        }
+    }
+}

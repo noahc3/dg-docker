@@ -8,7 +8,6 @@ services:
       - .env
     restart: unless-stopped
     volumes:
-      - ./nginx/dg-docker.conf.template:/etc/nginx/templates/dg-docker.conf.template:ro
       - repo-data:/app/repo
       - web-content:${SERVE_DIR}
 
