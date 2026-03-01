@@ -10,9 +10,10 @@ const secret = process.env.WEBHOOK_SECRET;
 const pat = process.env.GITHUB_PAT;
 const username = process.env.GITHUB_USERNAME;
 const repoName = process.env.GITHUB_REPO;
+const startNginx = process.env.START_NGINX !== 'false';
 const workDir = '/app/repo';
 const buildDir = path.join(workDir, 'dist');
-const serveDir = '/var/www/html';
+const serveDir = process.env.SERVE_DIR || '/var/www/html';
 
 
 function log(msg) {
@@ -216,6 +217,18 @@ app.get('/health', (req, res) => {
 
 function startNginx() {
     log('Starting Nginx...');
+    const nginxConfigTemplate = '/etc/nginx/template/nginx.conf.template';
+
+    try {
+        const template = fs.readFileSync(nginxConfigTemplate, 'utf8');
+        const config = template.replace(/\$\{SERVE_DIR\}/g, serveDir);
+        fs.writeFileSync(nginxConfigPath, config);
+        log(`Nginx config written with SERVE_DIR=${serveDir}`);
+    } catch (err) {
+        log(`Warning: Could not generate nginx config from template: ${err.message}`);
+        log('Using existing nginx.conf');
+    }
+
     const nginx = spawn('nginx', ['-g', 'daemon off;'], { stdio: 'inherit' });
     nginx.on('error', (err) => {
         log(`Failed to start Nginx: ${err.message}`);
@@ -235,17 +248,33 @@ function startNginx() {
     log(`Configured Repo: ${repoName}`);
     log(`Webhook Secret: ${secret ? '[SET]' : '[NOT SET]'}`);
     log(`GitHub PAT: ${pat ? '[SET]' : '[NOT SET]'}`);
+    log(`Serve Directory: ${serveDir}`);
+    log(`Start Nginx: ${startNginx ? '[YES]' : '[NO]'}`);
 
     if (!username || !repoName || !pat) {
         log('ERROR: GITHUB_USERNAME, GITHUB_REPO, and GITHUB_PAT must be provided.');
         process.exit(1);
     }
 
+    // Ensure the serve directory exists and has correct permissions
+    if (startNginx) {
+        fs.mkdirSync(serveDir, { recursive: true });
+        try {
+            execSync(`chown -R node:node ${serveDir}`);
+        } catch (e) {
+            log(`Warning: Could not change ownership of ${serveDir}: ${e.message}`);
+        }
+    }
+
     // Initial clone/pull + build
     runBuild();
 
-    // Start Nginx to serve the built files
-    startNginx();
+    // Start Nginx to serve the built files (if enabled)
+    if (startNginx) {
+        startNginx();
+    } else {
+        log('Nginx start disabled. Use external Nginx to serve ' + serveDir);
+    }
 
     // Start the webhook listener
     app.listen(port, () => {

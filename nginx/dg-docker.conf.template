@@ -2,6 +2,8 @@ events {
     worker_connections 1024;
 }
 
+
+
 http {
     include /etc/nginx/mime.types;
     default_type application/octet-stream;
@@ -11,10 +13,28 @@ http {
     keepalive_timeout 65;
 
     server {
-        listen 80;
-        server_name localhost;
+        if ($host = $DOMAIN) {
+            return 301 https://$host$request_uri;
+        }
 
-        root /var/www/html;
+        listen 80;
+        listen [::]:80;
+        server_name $DOMAIN;
+        location /.well-known/acme-challenge/ {
+            root /var/www/certbot/;
+        }
+    }
+
+    server {
+        listen [::]:443 ssl;
+        listen 443 ssl;
+        server_name $DOMAIN;
+        http2 on;
+
+        ssl_certificate /etc/letsencrypt/live/$DOMAIN/fullchain.pem;
+        ssl_certificate_key /etc/letsencrypt/live/$DOMAIN/privkey.pem;
+
+        root ${SERVE_DIR};
         index index.html;
 
         # Serve the Digital Garden's own 404 page for missing paths rather

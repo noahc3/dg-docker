@@ -3,11 +3,12 @@ services:
     build: .
     container_name: dg-docker
     ports:
-      - "80:80"
+      - "3000:3000"
     env_file:
       - .env
     restart: unless-stopped
     volumes:
+      - ./nginx/dg-docker.conf.template:/etc/nginx/templates/dg-docker.conf.template:ro
       - repo-data:/app/repo
       - web-content:/var/www/html
 
