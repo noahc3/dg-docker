@@ -119,3 +119,20 @@ The container runs a small Node.js manager script that:
 ## Security Note
 
 **Very important:** Your `GITHUB_PAT` is used to clone the repository. If you are reusing your token that you use for the Digital Garden plugin, it will have **read and write access** to your content. Ensure your `.env` file is kept secure and not committed to any public repositories. The `.env.example` file is provided as a template — do not commit your actual `.env` file.
+
+## Troubeshooting
+
+### Resources too low
+
+If you are running on a system with less than 4 GB memory, you may want to set limits for the dg-docker container:
+
+```yaml
+deploy:
+  resources:
+    limits:
+      cpus: "1"      # Number of CPUs (e.g., "1.5")
+      memory: 1G     # Memory (e.g., "512M", "2G")
+```
+
+Also note, that you probably need to decrease the configured size of `--max-old-space-size` for node in the [package.json](https://github.com/oleeskild/digitalgarden/blob/main/package.json) file from 4096 to a lower size than your systems memory ressources.
+
